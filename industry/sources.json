@@ -1,367 +1,1110 @@
 {
-  "$comment": "示范信源：首次启动时导入（scripts/seed.ts），已存在的不会被覆盖。之后在后台“信源”里新建、修改和暂停。字段说明见 docs/customize.md。",
+  "$comment": "示范信源：首次启动时导入（scripts/seed.ts），已存在的不会被覆盖。之后在后台“信源”里新建、修改和暂停。字段说明见 docs/customize.md。这里的 57 个源是 57 家上市/头部公司的官方招聘入口，全部是 external（外部上报）：岗位页面大多由 ATS 前端渲染或需要登录，本站不直接抓取，由配套爬虫按 sourceId 推送到 POST /api/ingest/items；入口网址、平台与接入方式见 docs/jobs-sources.md。",
   "sources": [
     {
-      "id": "rss-openai-news",
-      "name": "OpenAI News",
-      "kind": "rss",
+      "id": "ext-bytedance",
+      "name": "字节跳动 招聘",
+      "kind": "external",
       "config": {
-        "feedUrl": "https://openai.com/news/rss.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
+        "publisherRole": "organization"
       },
       "tier": "T1",
-      "owner_entity_id": "openai",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-google-deepmind",
-      "name": "Google DeepMind",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://deepmind.google/blog/rss.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": "google",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-google-research",
-      "name": "Google Research",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://research.google/blog/rss/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": "google",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方",
-        "研究"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-hugging-face",
-      "name": "Hugging Face Blog",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://huggingface.co/blog/feed.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": "hugging-face",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方",
-        "开源"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-microsoft-research",
-      "name": "Microsoft Research",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://www.microsoft.com/en-us/research/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": "microsoft",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方",
-        "研究"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-nvidia-blog",
-      "name": "NVIDIA Blog",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://blogs.nvidia.com/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": "nvidia",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-aws-ml",
-      "name": "AWS Machine Learning Blog",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://aws.amazon.com/blogs/machine-learning/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方",
-        "教程"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-github-ai",
-      "name": "GitHub Blog · AI & ML",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://github.blog/ai-and-ml/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-mistral",
-      "name": "Mistral AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://mistral.ai/news/rss",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-bair",
-      "name": "Berkeley AI Research",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://bair.berkeley.edu/blog/feed.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 180,
-      "tags": [
-        "研究"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-the-verge-ai",
-      "name": "The Verge · AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "owner_entity_id": null,
+      "owner_entity_id": "bytedance",
       "participation_mode": "editorial",
       "interval_minutes": 60,
       "tags": [
-        "媒体"
+        "官方",
+        "招聘",
+        "自建"
       ],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
     {
-      "id": "rss-techcrunch-ai",
-      "name": "TechCrunch · AI",
-      "kind": "rss",
+      "id": "ext-alibaba",
+      "name": "阿里巴巴 招聘",
+      "kind": "external",
       "config": {
-        "feedUrl": "https://techcrunch.com/category/artificial-intelligence/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
+        "publisherRole": "organization"
       },
-      "tier": "T2",
-      "owner_entity_id": null,
+      "tier": "T1",
+      "owner_entity_id": "alibaba",
       "participation_mode": "editorial",
       "interval_minutes": 60,
       "tags": [
-        "媒体"
+        "官方",
+        "招聘",
+        "自建"
       ],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
     {
-      "id": "rss-ars-technica-ai",
-      "name": "Ars Technica · AI",
-      "kind": "rss",
+      "id": "ext-tencent",
+      "name": "腾讯 招聘",
+      "kind": "external",
       "config": {
-        "feedUrl": "https://arstechnica.com/ai/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
+        "publisherRole": "organization"
       },
-      "tier": "T2",
-      "owner_entity_id": null,
+      "tier": "T1",
+      "owner_entity_id": "tencent",
       "participation_mode": "editorial",
       "interval_minutes": 60,
       "tags": [
-        "媒体"
+        "官方",
+        "招聘",
+        "自建"
       ],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
     {
-      "id": "rss-mit-tech-review-ai",
-      "name": "MIT Technology Review · AI",
-      "kind": "rss",
+      "id": "ext-meituan",
+      "name": "美团 招聘",
+      "kind": "external",
       "config": {
-        "feedUrl": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
+        "publisherRole": "organization"
       },
-      "tier": "T2",
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-the-decoder",
-      "name": "The Decoder",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://the-decoder.com/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "owner_entity_id": null,
+      "tier": "T1",
+      "owner_entity_id": "meituan",
       "participation_mode": "editorial",
       "interval_minutes": 60,
       "tags": [
-        "媒体"
+        "官方",
+        "招聘",
+        "自建"
       ],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
     {
-      "id": "rss-simon-willison",
-      "name": "Simon Willison",
-      "kind": "rss",
+      "id": "ext-jd",
+      "name": "京东 招聘",
+      "kind": "external",
       "config": {
-        "feedUrl": "https://simonwillison.net/atom/everything/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
+        "publisherRole": "organization"
       },
-      "tier": "T2",
-      "owner_entity_id": null,
+      "tier": "T1",
+      "owner_entity_id": "jd",
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 60,
       "tags": [
-        "个人"
+        "官方",
+        "招聘",
+        "自建"
       ],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
     {
-      "id": "rss-import-ai",
-      "name": "Import AI",
-      "kind": "rss",
+      "id": "ext-xiaomi",
+      "name": "小米 招聘",
+      "kind": "external",
       "config": {
-        "feedUrl": "https://importai.substack.com/feed",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
+        "publisherRole": "organization"
       },
-      "tier": "T2",
-      "owner_entity_id": null,
+      "tier": "T1",
+      "owner_entity_id": "xiaomi",
       "participation_mode": "editorial",
-      "interval_minutes": 180,
+      "interval_minutes": 60,
       "tags": [
-        "个人",
-        "周刊"
+        "官方",
+        "招聘",
+        "自建"
       ],
       "site_fulltext": false,
       "syndicate_fulltext": false
     },
     {
-      "id": "rss-latent-space",
-      "name": "Latent Space",
-      "kind": "rss",
+      "id": "ext-netease",
+      "name": "网易 招聘",
+      "kind": "external",
       "config": {
-        "feedUrl": "https://www.latent.space/feed",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "netease",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-baidu",
+      "name": "百度 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "baidu",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-bilibili",
+      "name": "哔哩哔哩 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "bilibili",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-pinduoduo",
+      "name": "拼多多 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "pinduoduo",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-trip",
+      "name": "携程 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "trip",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-vipshop",
+      "name": "唯品会 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "vipshop",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-tencentmusic",
+      "name": "腾讯音乐 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "tencentmusic",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-sanqi",
+      "name": "三七互娱 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "sanqi",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-qihoo360",
+      "name": "三六零 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "qihoo360",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-wanmei",
+      "name": "完美世界 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "wanmei",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-gbits",
+      "name": "吉比特 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "gbits",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-ztgame",
+      "name": "巨人网络 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "ztgame",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-kingnet",
+      "name": "恺英网络 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "kingnet",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-kunlun",
+      "name": "昆仑万维 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "kunlun",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-ourpalm",
+      "name": "掌趣科技 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "ourpalm",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-shunwang",
+      "name": "顺网科技 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "shunwang",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "北森"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-focuschina",
+      "name": "焦点科技 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "focuschina",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-wangsu",
+      "name": "网宿科技 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "wangsu",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建",
+        "待确认"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-bosszhipin",
+      "name": "BOSS直聘 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "bosszhipin",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-fulltruck",
+      "name": "满帮集团 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "fulltruck",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-ke",
+      "name": "贝壳 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "ke",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-zhihu",
+      "name": "知乎 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "zhihu",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-weibo",
+      "name": "微博 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "weibo",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-autohome",
+      "name": "汽车之家 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "autohome",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-huya",
+      "name": "虎牙 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "huya",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-douyu",
+      "name": "斗鱼 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "douyu",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-joyy",
+      "name": "欢聚集团 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "joyy",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "北森"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-immomo",
+      "name": "挚文集团 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "immomo",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-sohu",
+      "name": "搜狐 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "sohu",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-chineseall",
+      "name": "中文在线 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "chineseall",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-yoozoo",
+      "name": "游族网络 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "yoozoo",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-dianhun",
+      "name": "电魂网络 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "dianhun",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-shengtian",
+      "name": "盛天网络 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "shengtian",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-bingchuan",
+      "name": "冰川网络 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "bingchuan",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "北森"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-fanli",
+      "name": "返利科技 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "fanli",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-baozun",
+      "name": "宝尊电商 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "baozun",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-yixian",
+      "name": "逸仙电商 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
       },
       "tier": "T2",
-      "owner_entity_id": null,
+      "owner_entity_id": "yixian",
       "participation_mode": "editorial",
-      "interval_minutes": 180,
+      "interval_minutes": 60,
       "tags": [
-        "个人"
+        "官方",
+        "招聘",
+        "第三方",
+        "待确认"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-nanjids",
+      "name": "南极电商 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "nanjids",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "北森",
+        "待确认"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-smzdm",
+      "name": "值得买 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "smzdm",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "飞书招聘"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-onechance",
+      "name": "壹网壹创 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "onechance",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "北森"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-focusmedia",
+      "name": "分众传媒 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "focusmedia",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-inmyshow",
+      "name": "天下秀 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "inmyshow",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "Moka"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-bluefocus",
+      "name": "蓝色光标 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "bluefocus",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "飞书招聘"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-ywwl",
+      "name": "遥望科技 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "ywwl",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "北森"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-kingsoftcloud",
+      "name": "金山云 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "kingsoftcloud",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建",
+        "待确认"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-kingsoftoffice",
+      "name": "金山办公 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "kingsoftoffice",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建",
+        "待确认"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-gds",
+      "name": "万国数据 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "gds",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-ofidc",
+      "name": "奥飞数据 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "ofidc",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-capitalonline",
+      "name": "首都在线 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "capitalonline",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "第三方",
+        "待确认"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-qingcloud",
+      "name": "青云科技 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "qingcloud",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "自建"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-raycloud",
+      "name": "光云科技 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "raycloud",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "薪人薪事"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false
+    },
+    {
+      "id": "ext-intsig",
+      "name": "合合信息 招聘",
+      "kind": "external",
+      "config": {
+        "publisherRole": "organization"
+      },
+      "tier": "T1",
+      "owner_entity_id": "intsig",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "招聘",
+        "北森"
       ],
       "site_fulltext": false,
       "syndicate_fulltext": false
