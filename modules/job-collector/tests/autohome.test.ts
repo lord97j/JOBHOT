@@ -48,7 +48,7 @@ test("every job of the page gets one detail request of its own, and the page nev
   const { request, calls } = reading([47898, 47897]);
   const run = await runCollection({ ...AUTOHOME, sourceId: id }, { request, now: NOW });
 
-  assert.equal(run.orderExpected, "newest-first", "the live list came back newest first (measured 2026-10-14)");
+  assert.equal(run.orderExpected, "publishedAt-desc", "the live list came back newest by publication time (measured 2026-10-14)");
   assert.equal(run.orderConfirmed, true);
   assert.equal(run.created, 2);
   assert.equal(run.bodyFailures, 0);

@@ -21,6 +21,12 @@ export interface JobPosting {
   url: string;
   title: string;
   publishedAt: Date | null;
+  /**
+   * The time the source's own page is ordered by, when that is not the publication time — 知乎's board
+   * hands the array out by the day the position opened. Only used to check the order claim; the job's
+   * own publication time stays `publishedAt`. Measured, not a vendor promise: see each adapter.
+   */
+  orderAt?: Date | null;
   /** The job's own description as plain text; empty when this source's listing does not carry one. */
   body: string;
   raw: Record<string, unknown>;
@@ -32,8 +38,16 @@ export interface JobPage {
   total: number | null;
 }
 
-/** How an adapter's first page relates to "newest", measured against the live interface (see each adapter). */
-export type PageOrder = "newest-first" | "unverified";
+/**
+ * What an adapter claims about its first page, checked against the page on every read (see each adapter
+ * for the measurement behind the claim):
+ *
+ *   "publishedAt-desc" — newest publication first. The only claim under which this run's window is
+ *                        "the newest hundred".
+ *   "orderAt-desc"     — newest by the source's own clock first, which is NOT the publication time.
+ *   "unverified"       — nothing is known; the run takes the page and claims nothing.
+ */
+export type PageOrder = "publishedAt-desc" | "orderAt-desc" | "unverified";
 
 export interface JobAdapter {
   sourceId: string;
@@ -61,7 +75,7 @@ export interface SourceRun {
   /** The interface holds more than this run's window; an approved limit, not a source failure. */
   truncated: boolean;
   orderExpected: PageOrder;
-  /** Whether this page really came back newest first. */
+  /** Whether this page really came back in the order the adapter claims (checked on every run). */
   orderConfirmed: boolean;
   created: number;
   revised: number;
@@ -107,10 +121,21 @@ export function dateValue(value: unknown): Date | null {
 
 const reason = (error: unknown) => String(error instanceof Error ? error.message : error).slice(0, 300);
 
-/** Whether the page really came back newest first; a posting without a date neither proves nor breaks it. */
-function newestFirst(postings: readonly JobPosting[]): boolean {
-  const times = postings.map((p) => p.publishedAt?.getTime()).filter((t): t is number => t !== undefined);
-  return times.every((t, i) => i === 0 || t <= times[i - 1]!);
+/** Whether a list of times never rises; a posting without the time neither proves nor breaks the claim. */
+function nonIncreasing(times: readonly (number | undefined)[]): boolean {
+  const known = times.filter((t): t is number => t !== undefined);
+  return known.every((t, i) => i === 0 || t <= known[i - 1]!);
+}
+
+/**
+ * Whether the page really arrived in the order the adapter declared. Each claim is checked against the
+ * field it names, so "orderConfirmed" only ever means "this adapter's own claim held", never "newest by
+ * publication time" — that is only true when the claim is `publishedAt-desc` itself.
+ */
+function orderHolds(order: PageOrder, postings: readonly JobPosting[]): boolean {
+  if (order === "publishedAt-desc") return nonIncreasing(postings.map((p) => p.publishedAt?.getTime()));
+  if (order === "orderAt-desc") return nonIncreasing(postings.map((p) => p.orderAt?.getTime()));
+  return false;
 }
 
 /** The bodies already stored for these jobs, so a second run does not buy the same description twice. */
@@ -158,7 +183,7 @@ export async function runCollection(adapter: JobAdapter, opts: { request?: Reque
   run.received = page.postings.length;
   const window = page.postings.slice(0, MAX_PER_RUN);
   run.truncated = page.postings.length > window.length || (page.total !== null && page.total > window.length);
-  run.orderConfirmed = adapter.order === "newest-first" && newestFirst(window);
+  run.orderConfirmed = orderHolds(adapter.order, window);
 
   // One identity per job. A URL the identity rule cannot read is not a job we can keep; the fragment
   // belongs to the identity (Moka serves one job per fragment of its board page).

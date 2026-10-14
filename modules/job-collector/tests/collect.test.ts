@@ -167,18 +167,35 @@ test("the window is the first page and at most a hundred jobs", async () => {
 test("the page's own order is recorded, not assumed", async () => {
   const id = await source(`harness-${unique()}`);
   const sorted = [3, 2, 1].map((d) => posting({ url: `https://boards.example.com/jobs/s${d}`, title: `岗位 ${d}`, publishedAt: new Date(`2026-10-1${d}T00:00:00Z`) }));
-  const first = stub(async () => ({ postings: sorted, total: null }), { sourceId: id, order: "newest-first" });
+  const first = stub(async () => ({ postings: sorted, total: null }), { sourceId: id, order: "publishedAt-desc" });
   const run = await runCollection(first.adapter, { request: first.request, now: at(0) });
-  assert.equal(run.orderExpected, "newest-first");
+  assert.equal(run.orderExpected, "publishedAt-desc");
   assert.equal(run.orderConfirmed, true);
 
-  const scrambled = stub(async () => ({ postings: [sorted[1]!, sorted[0]!, sorted[2]!], total: null }), { sourceId: id, order: "newest-first" });
+  const scrambled = stub(async () => ({ postings: [sorted[1]!, sorted[0]!, sorted[2]!], total: null }), { sourceId: id, order: "publishedAt-desc" });
   const second = await runCollection(scrambled.adapter, { request: scrambled.request, now: at(61) });
   assert.equal(second.status, "ok", "an unordered page is a recorded fact, not a failed run");
   assert.equal(second.orderConfirmed, false);
 });
 
-test("an interface whose newest-first order is unverified says so", async () => {
+test("a page ordered by another clock is checked against that claim, and is not publish-time newest", async () => {
+  const id = await source(`harness-${unique()}`);
+  // Ordered by the day the position opened (descending), with a newer publication below an older one.
+  const opened = [
+    posting({ url: "https://boards.example.com/jobs/o1", title: "岗位 O1", publishedAt: new Date("2026-10-14T09:40:00Z"), orderAt: new Date("2026-10-13T16:00:00Z") }),
+    posting({ url: "https://boards.example.com/jobs/o2", title: "岗位 O2", publishedAt: new Date("2026-09-24T03:49:00Z"), orderAt: new Date("2026-09-23T16:00:00Z") }),
+    posting({ url: "https://boards.example.com/jobs/o3", title: "岗位 O3", publishedAt: new Date("2026-10-13T07:25:00Z"), orderAt: new Date("2026-09-23T16:00:00Z") }),
+  ];
+  const { adapter: a, request } = stub(async () => ({ postings: opened, total: null }), { sourceId: id, order: "orderAt-desc" });
+  const run = await runCollection(a, { request, now: at(0) });
+  assert.equal(run.orderExpected, "orderAt-desc");
+  assert.equal(run.orderConfirmed, true, "its own claim (the opening day, descending) holds");
+
+  const shuffled = stub(async () => ({ postings: [opened[1]!, opened[0]!, opened[2]!], total: null }), { sourceId: `harness-${unique()}`, order: "orderAt-desc" });
+  assert.equal((await runCollection(shuffled.adapter, { request: shuffled.request, now: at(0) })).orderConfirmed, false);
+});
+
+test("an interface whose order is unverified says so", async () => {
   const id = await source(`harness-${unique()}`);
   const { adapter: a, request } = stub(async () => ({ postings: [posting({ url: "https://boards.example.com/jobs/x", title: "岗位 X" })], total: null }), { sourceId: id, order: "unverified" });
   const run = await runCollection(a, { request, now: at(0) });

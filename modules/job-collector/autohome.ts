@@ -5,9 +5,10 @@
 //   POST .../getPositionDetail   body: positionId=<id>
 //     → { returnObject: { detail, requirement } }
 //
-// Sorting was measured, not assumed: on 2026-10-14 the list came back strictly by publicShowTime,
-// newest first (10-14 … 10-13 … down to 2025-11-19), so `currentPage=1` is the newest window and the run
-// checks that order again on every read (SourceRun.orderConfirmed).
+// Sorting was measured, not assumed: on 2026-10-14 the list came back strictly by publicShowTime —
+// the day the position went public, which is the publication time this run stores — newest first
+// (10-14 … 10-13 … down to 2025-11-19). So here, unlike Moka, `currentPage=1` really is the newest
+// window by publication time, and the run re-checks that order on every read (SourceRun.orderConfirmed).
 //
 // The list carries no description, so each job of the page costs one request of its own — a body per
 // job, NOT pagination: the ids come from the page just read and currentPage stays 1. The job's own link
@@ -50,7 +51,8 @@ function toPosting(item: AutohomeItem): JobPosting {
 
 export const AUTOHOME: JobAdapter = {
   sourceId: "ext-autohome",
-  order: "newest-first",
+  // The list's own publication time, descending — the only claim under which this window is "the newest".
+  order: "publishedAt-desc",
   async list(request) {
     const page = await request(LIST_URL + PAGE_QUERY, { method: "POST" }) as
       { returnObject?: { list?: AutohomeItem[]; count?: number } } | null;
