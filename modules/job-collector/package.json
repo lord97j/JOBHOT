@@ -1,0 +1,11 @@
+{
+  "name": "@aihot/job-collector",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./*.ts"
+  },
+  "dependencies": {
+    "@aihot/backend": "*"
+  }
+}

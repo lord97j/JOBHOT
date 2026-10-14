@@ -1,0 +1,72 @@
+// 汽车之家's own recruitment API (talent.autohome.com.cn). Read 2026-10-14:
+//
+//   POST .../getPositionList?currentPage=1&pageSize=1000&targetId=&work_place=&func_cat_id=&dept_id=&search=
+//     → { returnObject: { list: [{ id, name, publicShowTime, workCityShow, … }], count } }   (newest first)
+//   POST .../getPositionDetail   body: positionId=<id>
+//     → { returnObject: { detail, requirement } }
+//
+// Sorting was measured, not assumed: on 2026-10-14 the list came back strictly by publicShowTime,
+// newest first (10-14 … 10-13 … down to 2025-11-19), so `currentPage=1` is the newest window and the run
+// checks that order again on every read (SourceRun.orderConfirmed).
+//
+// The list carries no description, so each job of the page costs one request of its own — a body per
+// job, NOT pagination: the ids come from the page just read and currentPage stays 1. The job's own link
+// is the application form; the description lives only behind that per-job request.
+import { dateValue, plainText, type JobAdapter, type JobPosting } from "./collect.ts";
+import { collapseWhitespace } from "@aihot/backend/lib/text";
+
+const LIST_URL = "https://talent.autohome.com.cn/api/officialPosition/getPositionList";
+const DETAIL_URL = "https://talent.autohome.com.cn/api/officialPosition/getPositionDetail";
+
+// One page, as large as the interface accepts: the run takes its first hundred jobs and never asks for
+// another page (`currentPage` never moves, no offset is advanced).
+const PAGE_QUERY = "?currentPage=1&pageSize=1000&targetId=&work_place=&func_cat_id=&dept_id=&search=";
+
+interface AutohomeItem {
+  id?: number;
+  code?: string;
+  name?: string;
+  publicShowTime?: string;
+  deptShow?: string;
+  workCityShow?: string;
+  funcCatShow?: string;
+  salaryShow?: string;
+  targetShow?: string;
+  needNum?: number;
+  update_time?: string;
+}
+
+function toPosting(item: AutohomeItem): JobPosting {
+  return {
+    url: `https://talent.autohome.com.cn/recruit-delivery.html?pid=${item.id}`,
+    title: collapseWhitespace(item.name ?? ""),
+    // A date-only listing value: read as that day's start, like the engine's own date parsing.
+    publishedAt: dateValue(item.publicShowTime),
+    body: "", // 职责与要求 come from this job's own detail request (adapter.body below)
+    raw: { positionId: item.id, code: item.code, department: item.deptShow, city: item.workCityShow,
+      role: item.funcCatShow, salary: item.salaryShow, target: item.targetShow, openings: item.needNum, updatedAt: item.update_time },
+  };
+}
+
+export const AUTOHOME: JobAdapter = {
+  sourceId: "ext-autohome",
+  order: "newest-first",
+  async list(request) {
+    const page = await request(LIST_URL + PAGE_QUERY, { method: "POST" }) as
+      { returnObject?: { list?: AutohomeItem[]; count?: number } } | null;
+    const items = Array.isArray(page?.returnObject?.list) ? page.returnObject.list : [];
+    const total = page?.returnObject?.count;
+    return { postings: items.flatMap((item) => (item.id === undefined ? [] : [toPosting(item)])), total: typeof total === "number" ? total : null };
+  },
+  // One request for one job's description — the difference between this and a page turn is the argument:
+  // the id comes from the page this run just read, and no page number is involved.
+  async body(posting, request) {
+    const answer = await request(DETAIL_URL, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: `positionId=${encodeURIComponent(String(posting.raw.positionId))}`,
+    }) as { returnObject?: { detail?: string; requirement?: string } } | null;
+    const got = answer?.returnObject;
+    return plainText([got?.detail, got?.requirement].filter(Boolean).join("\n"));
+  },
+};
