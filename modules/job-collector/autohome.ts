@@ -21,6 +21,11 @@ const DETAIL_URL = "https://talent.autohome.com.cn/api/officialPosition/getPosit
 
 // One page, as large as the interface accepts: the run takes its first hundred jobs and never asks for
 // another page (`currentPage` never moves, no offset is advanced).
+//
+// `pageSize` is the interface's own cap, not the run's window (`collect.ts` MAX_PER_RUN): asking for a
+// thousand lets the answer itself show that the board holds more than this run keeps, while the run still
+// stores only the newest hundred. The two numbers are independent on purpose — raising the window must not
+// silently change the request the interface is asked to answer.
 const PAGE_QUERY = "?currentPage=1&pageSize=1000&targetId=&work_place=&func_cat_id=&dept_id=&search=";
 
 interface AutohomeItem {

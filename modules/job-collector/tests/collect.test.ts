@@ -9,7 +9,7 @@ import { config } from "@aihot/backend/config";
 import { closeDb, sql } from "@aihot/backend/db";
 import { stopBoss } from "@aihot/backend/jobs/queue";
 import { identityKeyForUrl } from "@aihot/backend/lib/url";
-import { collectDueJobs, MAX_PER_RUN, requestJson, runCollection, type JobAdapter, type JobPosting, type RequestJson } from "../collect.ts";
+import { collectDueJobs, dateValue, MAX_PER_RUN, plainText, requestJson, runCollection, type JobAdapter, type JobPosting, type RequestJson } from "../collect.ts";
 
 const unique = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
@@ -201,6 +201,30 @@ test("an interface whose order is unverified says so", async () => {
   const run = await runCollection(a, { request, now: at(0) });
   assert.equal(run.orderExpected, "unverified");
   assert.equal(run.orderConfirmed, false, "nothing verifies the order, so the run does not claim the newest hundred");
+});
+
+test("a date-only listing value is that day's start in the sources' own zone, not UTC midnight", () => {
+  // The engine drops a publication time more than an hour ahead of the discovery (materials.ts:82) and
+  // never recomputes it against a later discovery, so reading "2026-10-15" as UTC midnight (eight hours
+  // after Beijing midnight, i.e. in the future for the first seven hours of the Beijing day) loses the
+  // job permanently. A value that carries its own zone is left exactly as printed.
+  assert.equal(dateValue("2026-10-15")!.toISOString(), "2026-10-14T16:00:00.000Z");
+  assert.equal(dateValue("2026-10-14")!.toISOString(), "2026-10-13T16:00:00.000Z");
+  assert.equal(dateValue("2026-10-15T09:40:07.000Z")!.toISOString(), "2026-10-15T09:40:07.000Z");
+  assert.equal(dateValue("2026-10-15T09:40:07+08:00")!.toISOString(), "2026-10-15T01:40:07.000Z");
+  assert.equal(dateValue("  2026-10-15  ")!.toISOString(), dateValue("2026-10-15")!.toISOString());
+  assert.equal(dateValue("not a date"), null, "an interface's stray value must not invent a publication time");
+  assert.equal(dateValue(null), null);
+});
+
+test("an HTML description is decoded once, and numeric entities are read", () => {
+  assert.equal(plainText("<p>R&amp;D 工程师</p>"), "R&D 工程师");
+  assert.equal(plainText("&amp;lt;script&amp;gt;"), "&lt;script&gt;", "decoding once must not feed the next entity");
+  assert.equal(plainText("&#x4E2D;&#25991;"), "中文", "a numeric entity is a character, not a literal");
+  assert.equal(plainText("A&nbsp;B"), "A B");
+  assert.equal(plainText("&unknown; &amp;"), "&unknown; &", "only known entities are decoded");
+  assert.equal(plainText("<p>第一行</p><p>第二行</p>"), "第一行\n第二行", "a block's end keeps its line");
+  assert.equal(plainText("职责：<br>1. 写服务<br/>2. 写测试"), "职责：\n1. 写服务\n2. 写测试", "a line break stays a line break");
 });
 
 test("a source this module does not own is skipped, not invented", async () => {

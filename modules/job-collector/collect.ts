@@ -107,15 +107,50 @@ export async function requestJson(url: string, opts: { method?: string; headers?
  * it for a description that arrives as HTML (Moka) and for one that arrives as text (汽车之家).
  */
 export function plainText(markup: string): string {
-  return stripTagMarkup(markup.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|h[1-6]|blockquote|tr)>/gi, "\n"))
-    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
-    .split("\n").map((line) => line.replace(/[ \t\u00a0]+/g, " ").trim()).filter(Boolean).join("\n");
+  const text = decodeEntities(stripTagMarkup(markup.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|h[1-6]|blockquote|tr)>/gi, "\n")));
+  return text.split("\n").map((line) => line.replace(/[ \t\u00a0]+/g, " ").trim()).filter(Boolean).join("\n");
 }
 
-/** A date the source gave us, or null: an interface's stray value must not invent a publication time. */
+/** The named entities these boards print; any other name is left exactly as the source wrote it. */
+const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+
+/**
+ * Decode a text's entities in one pass. One pass is the point: replacing "&amp;" first and the rest
+ * afterwards turns "&amp;lt;" into "<" instead of "&lt;", and only a single pass decides every entity
+ * from the text as the source wrote it. Numeric entities ("&#x4E2D;", "&#25991;") are characters too,
+ * and a code that names no printable character stays as the source's own text.
+ */
+function decodeEntities(text: string): string {
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/gi, (entity, body: string) => {
+    if (body.startsWith("#")) {
+      const hex = body[1]!.toLowerCase() === "x";
+      const code = Number.parseInt(hex ? body.slice(2) : body.slice(1), hex ? 16 : 10);
+      const printable = Number.isInteger(code) && code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff);
+      return printable ? String.fromCodePoint(code) : entity;
+    }
+    return ENTITIES[body.toLowerCase()] ?? entity;
+  });
+}
+
+/** The zone these sources print their dates in: Chinese employers' own boards (Moka, 汽车之家). */
+const CHINA_OFFSET = "+08:00";
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * A date the source gave us, or null: an interface's stray value must not invent a publication time.
+ *
+ * A date-only value is that day's start in the sources' own zone, not UTC midnight. `Date.parse` reads
+ * "2026-10-15" as UTC midnight — eight hours later than the Beijing midnight it means — and the engine
+ * drops a publication time more than an hour ahead of the discovery as untrustworthy and never recomputes
+ * it against a later run (materials.ts `decideTimeline` / `fillPublicationTime`). Read as UTC, every job
+ * a board lists for "today" is therefore lost for good when the run lands in Beijing 00:00–07:00, which
+ * the module's five-minute schedule does seven hours a day. A value that carries its own zone is untouched.
+ */
 export function dateValue(value: unknown): Date | null {
   if (typeof value !== "string") return null;
-  const ms = Date.parse(value);
+  const v = value.trim();
+  if (!v) return null;
+  const ms = Date.parse(DATE_ONLY.test(v) ? `${v}T00:00:00${CHINA_OFFSET}` : v);
   return Number.isFinite(ms) ? new Date(ms) : null;
 }
 
@@ -240,7 +275,10 @@ export async function runCollection(adapter: JobAdapter, opts: { request?: Reque
     // half way still reports the next one as the source's first import.
     initializedAt: state?.initializedAt ?? now.toISOString(),
     lastRunAt: now.toISOString(),
-    lastWindow: { received: run.received, accepted: run.accepted, truncated: run.truncated, orderConfirmed: run.orderConfirmed,
+    // `orderExpected` is stored beside its verdict: on the source row, "confirmed" alone would read as
+    // "this window is the newest hundred", which is only true when the claim itself is publishedAt-desc.
+    lastWindow: { received: run.received, accepted: run.accepted, truncated: run.truncated,
+      orderExpected: run.orderExpected, orderConfirmed: run.orderConfirmed,
       created: run.created, revised: run.revised, bodyPending: run.bodyPending, bodyFailures: run.bodyFailures },
   });
   return run;

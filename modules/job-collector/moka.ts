@@ -66,7 +66,13 @@ function toPosting(board: MokaBoard, job: MokaJob): JobPosting {
   };
 }
 
-/** One Moka board. A second company on Moka is one more line here, not more code. */
+/**
+ * One Moka board. A second company on Moka is one more line here, not more code.
+ *
+ * Two boards must not share one `org`/`siteId`: identity is the job's URL, so the second source would
+ * find every job already owned by the first and never get an article of its own (the engine treats the
+ * same identity from another source as a discovery, not a revision).
+ */
 export function mokaBoard(board: MokaBoard): JobAdapter {
   return {
     sourceId: board.sourceId,

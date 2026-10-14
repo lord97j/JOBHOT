@@ -90,15 +90,16 @@ test("one page per run: offset stays 0 and the second page is never read", async
   assert.equal(run.truncated, false);
 });
 
-test("a job's fragment keeps it apart from its board-mates, and its description is the body", async () => {
+test("a job's fragment keeps it apart from its board-mates, its description is the body, and the next run of the same page adds nothing", async () => {
   const id = await source(`moka-${unique()}`);
-  const run = await runCollection(mokaBoard({ sourceId: id, org: "zhihu", siteId: "78336" }), { request: reading(PAGE), now: NOW });
+  const board = mokaBoard({ sourceId: id, org: "zhihu", siteId: "78336" });
+  const run = await runCollection(board, { request: reading(PAGE), now: NOW });
 
   assert.equal(run.received, 4);
   assert.equal(run.created, 3, "the job without a description is kept for a later run, not stored empty");
   assert.equal(run.bodyPending, 1);
-  const rows = await sql<{ url: string; title: string; body_text: string; body_status: string; excerpt: string | null; published_at: Date }[]>`
-    SELECT url, title, body_text, body_status, excerpt, published_at FROM articles WHERE source_id=${id} ORDER BY published_at DESC`;
+  const rows = await sql<{ id: string; url: string; title: string; body_text: string; body_status: string; excerpt: string | null; published_at: Date }[]>`
+    SELECT id, url, title, body_text, body_status, excerpt, published_at FROM articles WHERE source_id=${id} ORDER BY published_at DESC`;
   assert.deepEqual(rows.map((r) => r.title), ["大模型数据质量分析师", "AI 数据解决方案工程师", "机器学习平台运维工程师"]);
   assert.equal(rows[0]!.url, "https://app.mokahr.com/social-recruitment/zhihu/78336#/job/62037720-c0f9-4295-ab36-13523aab609e");
   assert.match(rows[0]!.body_text, /^职位描述：\n1、模型对⻬与数据影响分析。/);
@@ -106,16 +107,28 @@ test("a job's fragment keeps it apart from its board-mates, and its description 
   assert.equal(rows[0]!.body_status, "ok");
   assert.ok(rows[0]!.excerpt && rows[0]!.excerpt.length <= 300);
   assert.equal(rows[0]!.published_at.toISOString(), "2026-10-14T09:40:07.000Z");
+
+  // The same page again: the fragment is what makes each job its own article, so the second run must find
+  // every one of them already stored instead of creating them again under a fresh identity.
+  const again = await runCollection(board, { request: reading(PAGE), now: new Date(NOW.getTime() + 61 * 60_000) });
+  assert.equal(again.created, 0);
+  assert.equal(again.revised, 0);
+  assert.equal(again.bodyPending, 1, "the job the board still lists without a description is still waiting, not stored empty");
+  const after = await sql<{ id: string }[]>`SELECT id FROM articles WHERE source_id=${id} ORDER BY published_at DESC`;
+  assert.equal(after.length, 3);
+  assert.deepEqual(after.map((r) => r.id), rows.map((r) => r.id));
 });
 
-test("the board's order claim is a measurement, and it is not upgraded by adding more companies", () => {
+test("the board's order claim is a measurement", () => {
   // The value below comes from measuring 知乎's interface on 2026-10-14 over all 49 jobs it returned:
   // openedAt descending 49/49; publishedAt diverges (0/49 equal, 19 pairs inverted); none of the twelve
   // time-filter/sort parameters tried changed the set or the order; the other public paths are 404 or an
   // empty success envelope. The claim is a measurement, not a vendor promise, so raising it to
   // "publishedAt-desc" — the claim that lets the window be called "the newest hundred" — must come with a
   // fresh measurement of this interface, not with a later expansion.
+  //
+  // The claim sits on the one factory every Moka board is built through (moka.ts), because it describes
+  // the interface Moka serves for every org, not a company: a new board has no switch of its own to flip,
+  // and the only way to upgrade the claim is to change that line — which this assertion makes visible.
   assert.equal(ZHIHU.order, "orderAt-desc");
-  // A second Moka company inherits that same claim: ten more boards must not mean ten silent upgrades.
-  assert.equal(mokaBoard({ sourceId: "ext-other", org: "other", siteId: "1" }).order, ZHIHU.order);
 });
