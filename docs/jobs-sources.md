@@ -32,9 +32,62 @@
 | 第三方 ATS，服务端无岗位 | Moka（`app.mokahr.com`，完美世界、知乎、微博、搜狐等）、北森（`*.zhiye.com`，顺网、冰川、合合信息等）、飞书招聘（`*.jobs.feishu.cn`，值得买、蓝色光标）、薪人薪事（光云科技） |
 | 前端渲染或需要登录 | 虎牙、斗鱼、宝尊、满帮、掌趣、挚文、智联/51job/国聘/猎聘/BOSS |
 | 被拒或入口错配 | 网宿 406、金山云 403、首都在线指向了海航的招聘页 |
-| 服务端 HTML 里有列表 | 万国数据（`jobslist_20.html`）、汽车之家（`recruit-list.html?fl=1001`）、盛天网络（`/Join/jobList/type/1`）、三七互娱（`zhaopin.37.com`）、巨人网络（`hr.ztgame.com/campus/`） |
+| 服务端 HTML 里有链接，但链接不是岗位 | 万国数据、汽车之家、盛天网络、三七互娱（复核见下）、巨人网络（`hr.ztgame.com/campus/`，109 个链接多为校招项目页，未复核） |
 
-最后一行这 5 个可以后续补成 `web_list` 信源（要逐页核对选择器，并用后台的抓取预览验证）。在补上之前，所有公司都靠推送。
+### 复核：这 4 家能不能做成 `web_list`
+
+2026-10-13 用后台“预览抓取”的同一套读取路径（`packages/backend/src/sources/web-list.ts` 的 `fetchWebList` + `sources/filters.ts` 的 `admitListing`）逐家跑了一遍，结论是**都不能**：
+
+| 公司 | 预览用的页面 | 抓到的条数 | 服务端的岗位是什么样 |
+|---|---|---|---|
+| 万国数据 | `gds-services.com/zh_cn/jobslist_20.html` | 51，全是「关于我们 / 服务 / 投资者关系」等导航 | 岗位是 `<p style="font-weight:bold;">` 段落，同一页按华北/华东/华南平铺；每个岗位没有自己的网址，只有 `mailto:recruiting@gds-services.com`。把 `itemSelector` 收到岗位段落上得到 `no items matched (html)` |
+| 汽车之家 | `talent.autohome.com.cn/recruit-list.html` | 2，是登录浮层里的「忘记密码？/ 去注册」 | `#position-list` 是空 `<ul>`，岗位由 `js/recruit_list.js` 请求 `POST /api/officialPosition/getPositionList` 后渲染；首页那 4 条 `class="zhiwei-box"` 在 HTML 里是注释掉的，`href="#"` |
+| 盛天网络 | `shengtian.com/Join/jobList/type/1` | 42，全是导航 | 岗位在 `#js-list-job` 的 `<li>` 里，只有 `h1 span.title` 和正文（共 3 个），没有岗位网址也没有发布时间，只有 `mailto:zhaopin@stnts.com` |
+| 三七互娱 | `zhaopin.37.com/index.php?m=Home&c=recruit&a=recruit&recruit=1` | 20，全是导航 | 服务端只有筛选用的 checkbox（招聘类型/岗位类型/城市），列表容器 `.recruit-list-wrap` 是空的，岗位由 `static/robot/js/entry.min.js` 按路由（`campus-job-details` 等）渲染 |
+
+原因只有一个：内置 HTML 读取器不执行 JavaScript，而这 4 页的服务端 HTML 里没有逐岗位的网址——没有网址就没有可判重的岗位身份，`web_list` 收不到东西。汽车之家是 4 家里唯一有服务端接口的（`POST https://talent.autohome.com.cn/api/officialPosition/getPositionList`，表单编码，body 带 `currentPage` / `pageSize` / `targetId` / `work_place` / `func_cat_id` / `dept_id` / `search`，返回 `returnObject.list[]`，字段 `id`、`name`、`publicShowTime`、`update_time`、`workPlaceShow`、`funcCatShow`、`salaryShow`，岗位网址是 `recruit-delivery.html?pid=<id>`），但它要 POST 表单、要翻页参数，属于 `json_list` 或模块，不是 `web_list`。
+
+所以“补成 `web_list`”这条路对这批信源是关的：所有公司继续靠推送，直到 `json_list`（按 ATS 平台）或模块做出来。
+
+### 再复核：`json_list` 能不能接手（汽车之家 / Moka）
+
+2026-10-13 用 `fetchJsonList` + `admitListing`（预览抓取对 `json_list` 走的同一条路径）和 `scripts/collect.ts` 的 `collectSource` 实测了两个平台。两家都能**读到**岗位，但都还不能只靠 `json_list` 跑通。
+
+**汽车之家**：接口要 POST，但参数放在查询串、不带 body 就能用——`GET` 被拒（返回 `{"status":-1,"msg":"未知错误"}`），`POST` + 查询串参数返回全部 100 条。配置零框架改动：
+
+```json
+{
+  "url": "https://talent.autohome.com.cn/api/officialPosition/getPositionList?currentPage=1&pageSize=1000&targetId=&work_place=&func_cat_id=&dept_id=&search=",
+  "mode": "json_api", "method": "POST",
+  "itemsPath": "returnObject.list", "titlePaths": ["name"],
+  "urlTemplate": "https://talent.autohome.com.cn/recruit-delivery.html?pid={id}",
+  "publishedAtPath": "publicShowTime", "externalIdPath": "id"
+}
+```
+
+`pageSize=1000` 一页拉满；`bodyJson` 用不上（`fetchJsonList` 有 `bodyJson` 就强制 `content-type: application/json`，POST 表单编码表达不了；好在参数放查询串即可）。采集本身是通的：首次 `found: 100, created: 30`（首次导入上限 30），再跑一次 `created: 0`——**按 URL 判重正常**。
+
+**但拿不到岗位正文**：`recruit-delivery.html?pid=` 是投递表单页，服务端只有「姓名 / 手机号 / 教育经历」这些表单标签；岗位描述只在**每个岗位各一次**的 `POST /api/officialPosition/getPositionDetail`（body `positionId=`，返回 `returnObject.detail` / `.requirement`）里。`json_list` 没有「每个条目再请求一次接口」的能力（`detail` 抓的是条目自己的网页），于是 `body_status` 停在 `pending`、分析阶段 `waitsForPage` 一直等页，日报直接报 `nothing judged in its window`——**没有描述就没有精选和日报**。
+
+**Moka**（以知乎为例）：`GET https://api.mokahr.com/v1/jobs/zhihu?mode=social&limit=100&offset=0` 返回**明文** JSON（`jobs[]`：`id`、`title`、`description`、`publishedAt`、`status`），比站点自己用的接口好用——浏览器 Network 面板抓到站点实际调用的是 `POST https://app.mokahr.com/api/outer/ats-apply/website/jobs/module`（body 带 `orgId` / `siteId` / `moduleId`），返回的是**加密载荷** `{"data":"<密文>","necromancer":…}`，要用它得先复现 Moka 的解密。
+
+Moka 的岗位网址是**片段路由**：`app.mokahr.com/social-recruitment/<org>/<siteId>#/job/<uuid>`（`siteId` 不在接口返回里，只能从站点地址取，知乎是 `78336`）。没有非片段形式——`social-recruitment/<org>/<siteId>/job/<id>` 是 404。而 `normalizeUrl` 会去掉 `#…`：
+
+| 事实 | 结果 |
+|---|---|
+| `config-keys.ts` 给 `json_list` 的键表 | 没有 `preserveUrlFragment`（`web_list`、`rss` 有） |
+| `collect.ts` 的判重 | 只有 `source.config.preserveUrlFragment === true` 才保留片段 |
+| 实测（知乎 42 个在招岗位） | 首次采集 `found: 42, created: 1`——42 个岗位塌成 1 篇文章 |
+
+另外 `limit` 服务端封顶 100：微博 211 个在招、金山办公 146 个，`json_list` 没有翻页配置，一页只能看到最新的 100 个。
+
+**要动的地方（都是通用插口，不是站点专属逻辑）**
+
+1. Moka 只差一行：把 `preserveUrlFragment` 加进 `config-keys.ts` 里 `json_list` 的键表。判重那段代码对所有 kind 都已经认这个键，改完 Moka 就能用。
+2. 汽车之家要补一个「每个条目再读一次接口」的通用插口（例如给 `json_list` 的 `detail` 加一条接口路径），否则拿不到岗位描述。
+3. **模块目前接不了采集**：`ServerModule.sourceKinds` 只给了 `resumed` 和 `fetchNow`（后台手动试抓），采集链路（`sources/*.ts`、`jobs/*.ts`）从不读 `serverModules()`。`docs/architecture.md` 说“插口不够用时，在框架里加一个通用的插口”——采集这条路上还没有这个插口，得先加，模块才有地方放适配器。
+
+在此之前所有公司继续靠推送。汽车之家的 `getPositionList` / `getPositionDetail` 和 Moka 的 `api.mokahr.com/v1/jobs/<org>` 记在这里，省得下次重新探。
 
 ## 推送契约
 
